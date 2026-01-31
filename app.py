@@ -1,110 +1,178 @@
 import streamlit as st
-import json
-import random
-from datetime import datetime
 import pandas as pd
+from datetime import datetime
 
 from agent.state import AgentState
 from agent.observer import observe
 from agent.reasoner import reason
 from agent.decider import decide
 from agent.actor import act
-from agent.memory import remember
 
+# ---------------- Page Setup ----------------
 st.set_page_config(page_title="Agentic AI Support", layout="wide")
-st.title("🧠 Agentic AI – Self-Healing Support System")
 
-st.experimental_autorefresh(interval=5000)
+# ---------------- Session State ----------------
+if "tickets" not in st.session_state:
+    st.session_state.tickets = []
 
-# ---------- Load company state ----------
-with open("data/company_state.json") as f:
-    company_state = json.load(f)
+if "merchant_counter" not in st.session_state:
+    st.session_state.merchant_counter = 1
 
-# ---------- Generate tickets dynamically ----------
-def generate_tickets(state):
-    tickets = []
+# ---------------- Sidebar Navigation ----------------
+page = st.sidebar.radio(
+    "Navigate",
+    ["📝 Raise Ticket", "📊 Agent Dashboard"]
+)
 
-    def ticket(merchant, issue, error):
-        return {
-            "ticket_id": f"T{random.randint(1000,9999)}",
-            "merchant_id": merchant,
-            "issue": issue,
-            "error": error,
-            "time": datetime.now().strftime("%H:%M:%S")
-        }
+# ---------------- Shared Taxonomy ----------------
+ISSUES = [
+    "Checkout page blank",
+    "Payments failing",
+    "Home page not loading"
+]
 
-    for m in state["webhook_missing"]:
-        tickets.append(ticket(m, "Checkout page blank", "Missing webhook"))
+ERRORS = [
+    "Missing webhook",
+    "401 API Unauthorized",
+    "Frontend build not deployed",
+    "Other (describe manually)"
+]
 
-    for m in state["api_key_invalid"]:
-        tickets.append(ticket(m, "Payments failing", "401 API Unauthorized"))
+# ==================================================
+# PAGE 1 — RAISE TICKET
+# ==================================================
+if page == "📝 Raise Ticket":
+    st.title("📝 Raise a Support Ticket")
 
-    for m in state["frontend_not_deployed"]:
-        tickets.append(ticket(m, "Home page not loading", "Frontend build not deployed"))
+    st.info(
+        "This form captures merchant issues. "
+        "The AI agent will analyze patterns and suggest actions, "
+        "but **will not take action without human approval**."
+    )
 
-    for m in state["env_vars_missing"]:
-        tickets.append(ticket(m, "Config error", "Missing environment variables"))
+    merchant_id = f"M{st.session_state.merchant_counter:03d}"
+    st.text_input("Merchant ID", merchant_id, disabled=True)
 
-    return tickets
+    issue = st.selectbox("Issue Type", ISSUES)
+    error = st.selectbox("Observed Error", ERRORS)
 
-tickets = generate_tickets(company_state)
-tickets_df = pd.DataFrame(tickets)
+    custom_error = ""
+    if error == "Other (describe manually)":
+        custom_error = st.text_area(
+            "Describe the error (optional)",
+            max_chars=200,
+            placeholder="Describe unusual or unclear behavior"
+        )
 
-# ---------- Run agent ----------
-agent_state = AgentState()
-observe(agent_state, tickets)
-reason(agent_state)
-decide(agent_state)
+    description = st.text_area(
+        "Additional context (optional)",
+        max_chars=300,
+        placeholder="What changed? When did it start?"
+    )
 
-# ---------- Dashboard ----------
-st.subheader("📩 Recent Tickets")
-st.dataframe(tickets_df, use_container_width=True)
+    if st.button("📨 Submit Ticket"):
+        final_error = custom_error if error.startswith("Other") else error
 
-st.subheader("📊 Pattern Detection")
-pattern_df = tickets_df["error"].value_counts().reset_index()
-pattern_df.columns = ["Error Type", "Ticket Count"]
-st.bar_chart(pattern_df.set_index("Error Type"))
+        if not final_error.strip():
+            st.warning("Please describe the error when selecting 'Other'")
+        else:
+            ticket = {
+                "ticket_id": f"T{len(st.session_state.tickets)+1}",
+                "merchant_id": merchant_id,
+                "issue": issue,
+                "error": final_error,
+                "context": description,
+                "time": datetime.now().strftime("%H:%M:%S")
+            }
 
-st.subheader("🧠 Agent Reasoning")
-for h in agent_state.hypotheses:
-    with st.expander(h["cause"]):
-        st.write(f"Confidence: {h['confidence']}")
-        st.write(f"Risk: {h['risk']}")
-        st.write(f"Blast Radius: {h['blast_radius']}")
+            st.session_state.tickets.append(ticket)
+            st.session_state.merchant_counter += 1
 
-st.subheader("✅ Proposed Resolution")
+            st.success("Ticket submitted successfully")
 
-if agent_state.decision["status"] == "blocked":
-    st.error(agent_state.decision["reason"])
-else:
-    st.success(agent_state.decision["root_cause"])
-    st.write(f"Confidence: {agent_state.decision['confidence']}")
-    st.write(f"Risk: {agent_state.decision['risk']}")
+# ==================================================
+# PAGE 2 — AGENT DASHBOARD
+# ==================================================
+if page == "📊 Agent Dashboard":
+    st.title("📊 Agentic AI – Decision Dashboard")
 
-    col1, col2 = st.columns(2)
+    tickets = st.session_state.tickets
+    df = pd.DataFrame(tickets)
 
-    def apply_fix(root_cause):
-        if "Webhook" in root_cause:
-            company_state["webhook_missing"] = []
-        elif "API keys" in root_cause:
-            company_state["api_key_invalid"] = []
-        elif "Frontend" in root_cause:
-            company_state["frontend_not_deployed"] = []
-        elif "Environment variables" in root_cause:
-            company_state["env_vars_missing"] = []
+    # ---------------- Metrics ----------------
+    st.metric("🚨 Total Tickets", len(tickets))
 
-        with open("data/company_state.json", "w") as f:
-            json.dump(company_state, f, indent=2)
+    # ---------------- Latest Tickets ----------------
+    st.subheader("📩 Latest Tickets")
+    if tickets:
+        st.dataframe(df.tail(5), use_container_width=True)
+    else:
+        st.info("No tickets raised yet")
 
-    with col1:
-        if st.button("✅ Approve"):
+    if not tickets:
+        st.stop()
+
+    # ---------------- Agent Loop ----------------
+    agent_state = AgentState()
+    observe(agent_state, tickets)
+    reason(agent_state)
+    decide(agent_state)
+
+    # ---------------- Pattern Detection ----------------
+    st.subheader("📈 Observed Patterns (Evidence)")
+    pattern = df["error"].value_counts()
+    st.bar_chart(pattern)
+
+    # ---------------- Agent Belief ----------------
+    st.subheader("🧠 What the Agent Believes")
+
+    for h in agent_state.hypotheses:
+        with st.expander(h["cause"]):
+            st.write("Why the agent believes this:")
+            st.write(f"- Seen in **{h['blast_radius']}** tickets")
+            st.write(f"- Confidence: **{h['confidence']}**")
+            st.write(f"- Risk level: **{h['risk']}**")
+
+            if h["confidence"] < 0.6:
+                st.warning("⚠️ Low confidence — limited evidence")
+
+    # ---------------- Decision ----------------
+    st.subheader("⚖️ Proposed Action & Impact")
+
+    decision = agent_state.decision
+
+    if decision["status"] == "no_action":
+        st.success("System appears stable. No action recommended.")
+
+    elif decision["status"] == "blocked":
+        st.error(decision["reason"])
+
+    else:
+        st.warning(decision["root_cause"])
+
+        st.markdown("**Proposed impact:**")
+        st.markdown(
+            "- May affect **live checkouts**\n"
+            "- Could impact **merchant trust**\n"
+            "- Action is **reversible**\n"
+            "- No automatic execution"
+        )
+
+        st.markdown(
+            f"**Confidence:** {decision['confidence']}  \n"
+            f"**Risk level:** {decision['risk']}"
+        )
+
+        st.info(
+            "Ethical safeguard: This system will not "
+            "execute changes affecting money or live traffic "
+            "without explicit human approval."
+        )
+
+        if st.button("✅ Approve Mitigation"):
             act(agent_state, True)
-            apply_fix(agent_state.decision["root_cause"])
-            remember(agent_state)
-            st.success("Fix applied. System state updated.")
+            st.success("Mitigation approved (simulation only)")
 
-    with col2:
         if st.button("❌ Reject"):
             act(agent_state, False)
-            remember(agent_state)
-            st.warning("Action rejected.")
+            st.warning("Action rejected by human operator")
