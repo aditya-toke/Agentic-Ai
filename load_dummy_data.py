@@ -1,12 +1,4 @@
-import json
-from db import insert_ticket, init_db
+from db import init_db, load_csv
 
-init_db()
-
-with open("data/tickets.json", "r") as f:
-    tickets = json.load(f)
-
-for t in tickets:
-    insert_ticket(t)
-
-print("✅ Dummy data inserted into SQLite successfully")
+init_db()  # Make sure DB exists
+load_csv("tickets.csv")  # Load all dummy CSV tickets
