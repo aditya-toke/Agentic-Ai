@@ -1,0 +1,6 @@
+{
+  "webhook_missing": ["M001", "M002", "M008"],
+  "api_key_invalid": ["M003", "M004", "M006"],
+  "frontend_not_deployed": ["M005", "M007"],
+  "env_vars_missing": ["M009"]
+}
