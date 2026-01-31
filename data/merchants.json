@@ -1,0 +1,72 @@
+[
+  {
+    "merchant_id": "M001",
+    "migration_stage": "post-migration",
+    "webhooks_configured": false,
+    "frontend_deployed": true,
+    "api_keys_updated": true
+  },
+  {
+    "merchant_id": "M002",
+    "migration_stage": "post-migration",
+    "webhooks_configured": false,
+    "frontend_deployed": true,
+    "api_keys_updated": true
+  },
+  {
+    "merchant_id": "M003",
+    "migration_stage": "post-migration",
+    "webhooks_configured": true,
+    "frontend_deployed": true,
+    "api_keys_updated": false
+  },
+  {
+    "merchant_id": "M004",
+    "migration_stage": "post-migration",
+    "webhooks_configured": true,
+    "frontend_deployed": true,
+    "api_keys_updated": false
+  },
+  {
+    "merchant_id": "M005",
+    "migration_stage": "post-migration",
+    "webhooks_configured": true,
+    "frontend_deployed": false,
+    "api_keys_updated": true
+  },
+  {
+    "merchant_id": "M006",
+    "migration_stage": "post-migration",
+    "webhooks_configured": true,
+    "frontend_deployed": true,
+    "api_keys_updated": false
+  },
+  {
+    "merchant_id": "M007",
+    "migration_stage": "post-migration",
+    "webhooks_configured": true,
+    "frontend_deployed": false,
+    "api_keys_updated": true
+  },
+  {
+    "merchant_id": "M008",
+    "migration_stage": "post-migration",
+    "webhooks_configured": false,
+    "frontend_deployed": true,
+    "api_keys_updated": true
+  },
+  {
+    "merchant_id": "M009",
+    "migration_stage": "post-migration",
+    "webhooks_configured": true,
+    "frontend_deployed": true,
+    "env_variables_set": false
+  },
+  {
+    "merchant_id": "M010",
+    "migration_stage": "post-migration",
+    "webhooks_configured": true,
+    "frontend_deployed": true,
+    "api_keys_updated": true
+  }
+]

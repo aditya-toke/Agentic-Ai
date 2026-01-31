@@ -1,0 +1,26 @@
+[
+  {
+    "ticket_id": "T105",
+    "observed_issue": "HTTP 500 error",
+    "module": "Frontend",
+    "confidence": 0.92
+  },
+  {
+    "ticket_id": "T106",
+    "observed_issue": "Request timeout",
+    "module": "Backend API",
+    "confidence": 0.89
+  },
+  {
+    "ticket_id": "T101",
+    "observed_issue": "Bank response delayed",
+    "module": "Payment Gateway",
+    "confidence": 0.95
+  },
+  {
+    "ticket_id": "T103",
+    "observed_issue": "Authentication token expired",
+    "module": "Auth Service",
+    "confidence": 0.91
+  }
+]
