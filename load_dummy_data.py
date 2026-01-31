@@ -3,7 +3,7 @@ from db import insert_ticket, init_db
 
 init_db()
 
-with open("datasets/tickets.json", "r") as f:
+with open("data/tickets.json", "r") as f:
     tickets = json.load(f)
 
 for t in tickets:
