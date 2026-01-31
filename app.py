@@ -1,3 +1,6 @@
+from db import init_db, insert_ticket, get_all_tickets
+init_db()
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -10,13 +13,6 @@ from agent.actor import act
 
 # ---------------- Page Setup ----------------
 st.set_page_config(page_title="Agentic AI Support", layout="wide")
-
-# ---------------- Session State ----------------
-if "tickets" not in st.session_state:
-    st.session_state.tickets = []
-
-if "merchant_counter" not in st.session_state:
-    st.session_state.merchant_counter = 1
 
 # ---------------- Sidebar Navigation ----------------
 page = st.sidebar.radio(
@@ -50,7 +46,9 @@ if page == "📝 Raise Ticket":
         "but **will not take action without human approval**."
     )
 
-    merchant_id = f"M{st.session_state.merchant_counter:03d}"
+    tickets = get_all_tickets()
+
+    merchant_id = f"M{len(tickets)+1:03d}"
     st.text_input("Merchant ID", merchant_id, disabled=True)
 
     issue = st.selectbox("Issue Type", ISSUES)
@@ -77,7 +75,7 @@ if page == "📝 Raise Ticket":
             st.warning("Please describe the error when selecting 'Other'")
         else:
             ticket = {
-                "ticket_id": f"T{len(st.session_state.tickets)+1}",
+                "ticket_id": f"T{len(tickets)+1}",
                 "merchant_id": merchant_id,
                 "issue": issue,
                 "error": final_error,
@@ -85,9 +83,7 @@ if page == "📝 Raise Ticket":
                 "time": datetime.now().strftime("%H:%M:%S")
             }
 
-            st.session_state.tickets.append(ticket)
-            st.session_state.merchant_counter += 1
-
+            insert_ticket(ticket)
             st.success("Ticket submitted successfully")
 
 # ==================================================
@@ -96,7 +92,7 @@ if page == "📝 Raise Ticket":
 if page == "📊 Agent Dashboard":
     st.title("📊 Agentic AI – Decision Dashboard")
 
-    tickets = st.session_state.tickets
+    tickets = get_all_tickets()
     df = pd.DataFrame(tickets)
 
     # ---------------- Metrics ----------------
