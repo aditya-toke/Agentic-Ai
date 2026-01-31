@@ -1,11 +1,17 @@
 def decide(reasoning):
     cause = reasoning["root_cause"]
 
-    if "platform regression" in cause:
-        action = "Escalate to engineering and alert all migrated merchants"
-    elif "webhook" in cause:
-        action = "Send configuration guide to affected merchants"
-    else:
-        action = "Wait for more data"
+    if "webhook" in cause.lower():
+        return "Send webhook setup guide to affected merchants and update documentation"
 
-    return action
+    elif "api keys" in cause.lower():
+        return "Notify merchants to regenerate API keys and alert support team"
+
+    elif "frontend" in cause.lower():
+        return "Ask merchants to redeploy frontend and provide deployment checklist"
+
+    elif "environment variables" in cause.lower():
+        return "Send environment variable setup instructions"
+
+    else:
+        return "Monitor for more signals before acting"
