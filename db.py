@@ -16,7 +16,17 @@ def init_db():
             time TEXT
         )
     """)
+    conn.commit()
+    conn.close()
 
+    
+def update_ticket_status(ticket_id, status):
+    conn = sqlite3.connect("agentic_ai.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE tickets SET status=? WHERE ticket_id=?",
+        (status, ticket_id)
+    )
     conn.commit()
     conn.close()
 

@@ -1,4 +1,4 @@
-from db import init_db, insert_ticket, get_all_tickets
+from db import init_db, insert_ticket, get_all_tickets, update_ticket_status
 init_db()
 
 import streamlit as st
@@ -14,11 +14,82 @@ from agent.actor import act
 # ---------------- Page Setup ----------------
 st.set_page_config(page_title="Agentic AI Support", layout="wide")
 
-# ---------------- Sidebar Navigation ----------------
-page = st.sidebar.radio(
-    "Navigate",
-    ["📝 Raise Ticket", "📊 Agent Dashboard"]
-)
+# ---------------- Session State ----------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "role" not in st.session_state:
+    st.session_state.role = None
+
+if "username" not in st.session_state:
+    st.session_state.username = None
+
+# ---------------- Authentication ----------------
+def authenticate(username, password):
+    if username == "admin" and password == "admin123":
+        return True, "admin"
+    if username == "user" and password == "user123":
+        return True, "user"
+    return False, None
+
+# ==================================================
+# LOGIN PAGE
+# ==================================================
+if not st.session_state.logged_in:
+    st.markdown(
+        """
+        <h1 style="text-align:center; color:#1b5e3c;">🧠 Agentic AI Support</h1>
+        <p style="text-align:center; color:#4f8f6f;">
+        Intelligent self-healing support for modern commerce
+        </p>
+        """,
+        unsafe_allow_html=True
+    )
+
+    left, center, right = st.columns([1.2, 1, 1.2])
+
+    with center:
+        with st.container(border=True):
+            st.subheader("Sign in")
+
+            username = st.text_input("Username", placeholder="admin or user")
+            password = st.text_input("Password", type="password")
+
+            if st.button("Sign in", type="primary"):
+                success, role = authenticate(username, password)
+                if success:
+                    st.session_state.logged_in = True
+                    st.session_state.role = role
+                    st.session_state.username = username
+                    st.success("Login successful")
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials")
+
+    st.stop()
+
+# ==================================================
+# LOGOUT
+# ==================================================
+col1, col2 = st.columns([6, 1])
+with col2:
+    if st.button("🚪 Logout"):
+        st.session_state.logged_in = False
+        st.session_state.role = None
+        st.session_state.username = None
+        st.rerun()
+
+# ==================================================
+# ROLE-BASED NAVIGATION
+# ==================================================
+if st.session_state.role == "user":
+    page = st.radio(
+        "User Menu",
+        ["📝 Raise Ticket", "📄 My Tickets"],
+        horizontal=True
+    )
+else:
+    page = "📊 Agent Dashboard"
 
 # ---------------- Shared Taxonomy ----------------
 ISSUES = [
@@ -35,20 +106,14 @@ ERRORS = [
 ]
 
 # ==================================================
-# PAGE 1 — RAISE TICKET
+# USER — RAISE TICKET
 # ==================================================
 if page == "📝 Raise Ticket":
     st.title("📝 Raise a Support Ticket")
 
-    st.info(
-        "This form captures merchant issues. "
-        "The AI agent will analyze patterns and suggest actions, "
-        "but **will not take action without human approval**."
-    )
-
     tickets = get_all_tickets()
-
     merchant_id = f"M{len(tickets)+1:03d}"
+
     st.text_input("Merchant ID", merchant_id, disabled=True)
 
     issue = st.selectbox("Issue Type", ISSUES)
@@ -56,23 +121,15 @@ if page == "📝 Raise Ticket":
 
     custom_error = ""
     if error == "Other (describe manually)":
-        custom_error = st.text_area(
-            "Describe the error (optional)",
-            max_chars=200,
-            placeholder="Describe unusual or unclear behavior"
-        )
+        custom_error = st.text_area("Describe the error", max_chars=200)
 
-    description = st.text_area(
-        "Additional context (optional)",
-        max_chars=300,
-        placeholder="What changed? When did it start?"
-    )
+    description = st.text_area("Additional context (optional)", max_chars=300)
 
     if st.button("📨 Submit Ticket"):
         final_error = custom_error if error.startswith("Other") else error
 
         if not final_error.strip():
-            st.warning("Please describe the error when selecting 'Other'")
+            st.warning("Please describe the error")
         else:
             ticket = {
                 "ticket_id": f"T{len(tickets)+1}",
@@ -80,14 +137,63 @@ if page == "📝 Raise Ticket":
                 "issue": issue,
                 "error": final_error,
                 "context": description,
-                "time": datetime.now().strftime("%H:%M:%S")
+                "time": datetime.now().strftime("%H:%M:%S"),
+                "status": "OPEN",
+                "created_by": st.session_state.username
             }
-
             insert_ticket(ticket)
-            st.success("Ticket submitted successfully")
+            st.success("Ticket submitted successfully (Status: OPEN)")
 
 # ==================================================
-# PAGE 2 — AGENT DASHBOARD
+# USER — MY TICKETS (FETCHED FROM DB)
+# ==================================================
+if page == "📄 My Tickets":
+    st.title("📄 My Tickets")
+
+    tickets = get_all_tickets()
+    df = pd.DataFrame(tickets)
+
+    # Filter only logged-in user's tickets
+    user_df = df[df["created_by"] == st.session_state.username]
+
+    if user_df.empty:
+        st.info("You have not raised any tickets yet.")
+        st.stop()
+
+    st.dataframe(
+        user_df[
+            ["ticket_id", "issue", "error", "status", "time"]
+        ],
+        use_container_width=True
+    )
+
+    st.subheader("🧠 AI Suggested Solutions")
+
+    for _, row in user_df.iterrows():
+        with st.expander(f"{row['ticket_id']} — {row['status']}"):
+            st.write(f"**Issue:** {row['issue']}")
+            st.write(f"**Error:** {row['error']}")
+
+            if "webhook" in row["error"].lower():
+                solution = "Ensure webhook endpoints are configured and reachable."
+            elif "401" in row["error"]:
+                solution = "Verify API keys and permissions."
+            elif "frontend" in row["error"].lower():
+                solution = "Redeploy frontend build and verify assets."
+            else:
+                solution = "Investigate recent configuration changes."
+
+            st.success(solution)
+
+            if row["status"] == "OPEN":
+                st.info("Awaiting admin review")
+            elif row["status"] == "APPROVED":
+                st.success("Approved by admin")
+            elif row["status"] == "REJECTED":
+                st.error("Rejected by admin")
+
+# ==================================================
+# ADMIN — AGENT DASHBOARD (FETCHES ALL TICKETS)
 # ==================================================
 if page == "📊 Agent Dashboard":
     st.title("📊 Agentic AI – Decision Dashboard")
@@ -95,80 +201,39 @@ if page == "📊 Agent Dashboard":
     tickets = get_all_tickets()
     df = pd.DataFrame(tickets)
 
-    # ---------------- Metrics ----------------
-    st.metric("🚨 Total Tickets", len(tickets))
+    st.metric("🚨 Total Tickets", len(df))
+    st.dataframe(df, use_container_width=True)
 
-    # ---------------- Latest Tickets ----------------
-    st.subheader("📩 Latest Tickets")
-    if tickets:
-        st.dataframe(df.tail(5), use_container_width=True)
-    else:
-        st.info("No tickets raised yet")
-
-    if not tickets:
+    if df.empty:
         st.stop()
 
-    # ---------------- Agent Loop ----------------
     agent_state = AgentState()
     observe(agent_state, tickets)
     reason(agent_state)
     decide(agent_state)
 
-    # ---------------- Pattern Detection ----------------
-    st.subheader("📈 Observed Patterns (Evidence)")
-    pattern = df["error"].value_counts()
-    st.bar_chart(pattern)
-
-    # ---------------- Agent Belief ----------------
-    st.subheader("🧠 What the Agent Believes")
-
-    for h in agent_state.hypotheses:
-        with st.expander(h["cause"]):
-            st.write("Why the agent believes this:")
-            st.write(f"- Seen in **{h['blast_radius']}** tickets")
-            st.write(f"- Confidence: **{h['confidence']}**")
-            st.write(f"- Risk level: **{h['risk']}**")
-
-            if h["confidence"] < 0.6:
-                st.warning("⚠️ Low confidence — limited evidence")
-
-    # ---------------- Decision ----------------
-    st.subheader("⚖️ Proposed Action & Impact")
-
     decision = agent_state.decision
 
-    if decision["status"] == "no_action":
-        st.success("System appears stable. No action recommended.")
+    if decision["status"] in ["no_action", "blocked"]:
+        st.info("No actionable issue detected")
+        st.stop()
 
-    elif decision["status"] == "blocked":
-        st.error(decision["reason"])
+    st.subheader("⚖️ Admin Approval Required")
+    st.warning(f"Root cause detected: {decision['root_cause']}")
 
-    else:
-        st.warning(decision["root_cause"])
+    for _, row in df.iterrows():
+        if row["error"] == decision["root_cause"] and row["status"] == "OPEN":
 
-        st.markdown("**Proposed impact:**")
-        st.markdown(
-            "- May affect **live checkouts**\n"
-            "- Could impact **merchant trust**\n"
-            "- Action is **reversible**\n"
-            "- No automatic execution"
-        )
+            col1, col2 = st.columns(2)
 
-        st.markdown(
-            f"**Confidence:** {decision['confidence']}  \n"
-            f"**Risk level:** {decision['risk']}"
-        )
+            with col1:
+                if st.button(f"✅ Approve {row['ticket_id']}"):
+                    update_ticket_status(row["ticket_id"], "APPROVED")
+                    st.success("Ticket approved")
+                    st.rerun()
 
-        st.info(
-            "Ethical safeguard: This system will not "
-            "execute changes affecting money or live traffic "
-            "without explicit human approval."
-        )
-
-        if st.button("✅ Approve Mitigation"):
-            act(agent_state, True)
-            st.success("Mitigation approved (simulation only)")
-
-        if st.button("❌ Reject"):
-            act(agent_state, False)
-            st.warning("Action rejected by human operator")
+            with col2:
+                if st.button(f"❌ Reject {row['ticket_id']}"):
+                    update_ticket_status(row["ticket_id"], "REJECTED")
+                    st.warning("Ticket rejected")
+                    st.rerun()

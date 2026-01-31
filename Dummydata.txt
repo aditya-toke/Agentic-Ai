@@ -1,0 +1,54 @@
+T001,M001,Checkout page not loading,Missing webhook,Headless migration – webhook not configured,2026-01-31 09:02
+T002,M002,Payment failing,401 Unauthorized,API keys not updated after migration,2026-01-31 09:05
+T003,M003,Order confirmation missing,Webhook timeout,Delayed webhook response from backend,2026-01-31 09:07
+T004,M004,Checkout blank screen,Frontend build not deployed,New frontend not pushed to production,2026-01-31 09:10
+T005,M005,Payments failing intermittently,Rate limit exceeded,Spike in API calls during sale,2026-01-31 09:14
+T006,M006,Cart not syncing,API mismatch,Frontend calling deprecated endpoint,2026-01-31 09:18
+T007,M007,Checkout redirect loop,Auth token expired,Token TTL misconfigured,2026-01-31 09:21
+T008,M008,Orders not created,Missing environment variables,Env variables not set in backend,2026-01-31 09:25
+T009,M009,Payment gateway timeout,Bank response delayed,Upstream payment provider latency,2026-01-31 09:30
+T010,M010,Checkout page slow,High API latency,Backend under heavy load,2026-01-31 09:33
+
+T011,M011,Checkout broken,Webhook signature invalid,Incorrect webhook secret,2026-01-31 09:36
+T012,M012,Refund API failing,403 Forbidden,Permissions missing in API scope,2026-01-31 09:40
+T013,M013,Order status not updating,Webhook not received,Webhook endpoint unreachable,2026-01-31 09:44
+T014,M014,Frontend crash,JS runtime error,Incompatible SDK version,2026-01-31 09:47
+T015,M015,Payment stuck pending,Gateway callback missing,Callback URL misconfigured,2026-01-31 09:51
+T016,M016,Checkout validation error,Invalid payload schema,Payload format changed post-migration,2026-01-31 09:55
+T017,M017,Orders duplicated,Retry logic misconfigured,Multiple retries on timeout,2026-01-31 09:58
+T018,M018,Shipping rates missing,External API failure,Shipping provider API down,2026-01-31 10:02
+T019,M019,Promo code not applied,Rule engine error,Discount rules not migrated,2026-01-31 10:06
+T020,M020,Payment declined incorrectly,Fraud rules too strict,Fraud configuration reset during migration,2026-01-31 10:10
+
+T021,M021,Checkout UI broken,CSS not loaded,Static assets not served,2026-01-31 10:13
+T022,M022,Order emails missing,SMTP configuration error,Email service not configured,2026-01-31 10:17
+T023,M023,API authentication failing,Invalid client secret,Secret rotated but not updated,2026-01-31 10:21
+T024,M024,Checkout timeout,Slow database queries,Missing DB indexes,2026-01-31 10:25
+T025,M025,Payment page redirect error,Incorrect return URL,URL mismatch after migration,2026-01-31 10:28
+T026,M026,Order webhook delayed,Queue backlog,Message queue overloaded,2026-01-31 10:32
+T027,M027,Inventory mismatch,Sync job failed,Inventory sync cron failed,2026-01-31 10:36
+T028,M028,Checkout form not submitting,Frontend JS error,Form handler not bound,2026-01-31 10:40
+T029,M029,Payments blocked,Compliance check failed,Compliance service timeout,2026-01-31 10:43
+T030,M030,Orders missing in dashboard,Read replica lag,Database replication delay,2026-01-31 10:47
+
+T031,M031,Checkout error message unclear,Generic error response,Error mapping missing,2026-01-31 10:50
+T032,M032,Webhook retries failing,Retry limit exceeded,Exponential backoff misconfigured,2026-01-31 10:54
+T033,M033,API calls rejected,IP not whitelisted,Firewall rules outdated,2026-01-31 10:58
+T034,M034,Cart total incorrect,Tax service error,Tax provider API changed,2026-01-31 11:02
+T035,M035,Payment callback not received,SSL handshake failed,Invalid SSL certificate,2026-01-31 11:05
+T036,M036,Checkout mobile view broken,Responsive CSS issue,Mobile styles not tested,2026-01-31 11:09
+T037,M037,Orders stuck processing,Background worker down,Worker crashed after deploy,2026-01-31 11:13
+T038,M038,Refund delayed,Queue processing slow,High refund volume,2026-01-31 11:17
+T039,M039,Checkout address validation failing,Address API error,Third-party address service down,2026-01-31 11:21
+T040,M040,Payment method missing,Config not migrated,Payment method disabled by default,2026-01-31 11:24
+
+T041,M041,Order webhook duplicated,Idempotency key missing,Duplicate events processed,2026-01-31 11:28
+T042,M042,Checkout spinner stuck,Frontend awaiting response,Backend request hanging,2026-01-31 11:32
+T043,M043,Payment success but order missing,Async flow broken,Order creation async job failed,2026-01-31 11:36
+T044,M044,Checkout page error,500 Internal Server Error,Unhandled backend exception,2026-01-31 11:40
+T045,M045,Order totals wrong,Rounding logic bug,Price calculation logic changed,2026-01-31 11:43
+T046,M046,Payment retries excessive,Retry policy misconfigured,No retry cap configured,2026-01-31 11:47
+T047,M047,Webhook verification failed,Signature mismatch,Hash algorithm mismatch,2026-01-31 11:51
+T048,M048,Checkout blocked by CSP,CSP policy violation,Script source not whitelisted,2026-01-31 11:55
+T049,M049,Order export failing,File generation error,CSV generator bug,2026-01-31 11:58
+T050,M050,Payments unavailable,Gateway outage,Payment provider downtime,2026-01-31 12:02
