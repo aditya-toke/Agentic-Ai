@@ -38,7 +38,7 @@
   
   {
     "ticket_id": "T4",
-    "merchant_id": "M5",
+    "merchant_id": "M005",
     "issue": "Payments failing",
     "area": "backend",
     "migration_stage": "post-migration",
@@ -48,7 +48,7 @@
   
   {
     "ticket_id": "T5",
-    "merchant_id": "M5",
+    "merchant_id": "M006",
     "issue": "Home page not loading",
     "area": "frontend",
     "migration_stage": "post-migration",
@@ -59,7 +59,7 @@
    
    {
     "ticket_id": "T8",
-    "merchant_id": "M6",
+    "merchant_id": "M007",
     "issue": "Payments failing",
     "area": "backend",
     "migration_stage": "post-migration",
@@ -69,7 +69,7 @@
 
     {
     "ticket_id": "T7",
-    "merchant_id": "M7",
+    "merchant_id": "M008",
     "issue": "Home page not loading",
     "area": "frontend",
     "migration_stage": "post-migration",
@@ -79,7 +79,7 @@
      
     {
   "ticket_id": "T8",
-  "merchant_id": "M008",
+  "merchant_id": "M009",
   "issue": "Checkout page blank",
   "area": "frontend",
   "migration_stage": "post-migration",
@@ -88,7 +88,7 @@
 },
 {
   "ticket_id": "T9",
-  "merchant_id": "M009",
+  "merchant_id": "M010",
   "issue": "Home page not loading",
   "area": "frontend",
   "migration_stage": "post-migration",
@@ -97,7 +97,7 @@
 },
 {
   "ticket_id": "T10",
-  "merchant_id": "M010",
+  "merchant_id": "M011",
   "issue": "Payments failing intermittently",
   "area": "backend",
   "migration_stage": "post-migration",
