@@ -1,36 +1,26 @@
+from agent.feedback import feedback_learner
+
 def decide(state):
-    """
-    Decide what action to take based on hypotheses.
-    Handles uncertainty safely.
-    """
-
-    # 🟡 Case 1: No hypothesis → insufficient evidence
     if not state.hypotheses:
-        state.decision = {
-            "status": "no_action",
-            "reason": "Insufficient evidence to determine root cause",
-            "confidence": 0.0,
-            "risk": "Low"
-        }
+        state.decision = {"status": "no_action"}
         return
 
-    # 🟢 Case 2: Use strongest hypothesis
     primary = state.hypotheses[0]
+    error_type = primary["cause"]
 
-    # 🔴 High-risk actions are blocked
-    if primary.get("risk") == "High":
-        state.decision = {
-            "status": "blocked",
-            "reason": "Proposed action affects money or live checkouts",
-            "confidence": primary.get("confidence", 0.0),
-            "risk": "High"
-        }
-        return
+    learned_action = feedback_learner.best_action(error_type)
 
-    # 🟢 Safe proposal
+    if learned_action:
+        action = learned_action
+        confidence = min(primary["confidence"] + 0.15, 0.95)
+    else:
+        action = "Notify merchant with setup guide"
+        confidence = primary["confidence"]
+
     state.decision = {
-        "status": "proposed",
-        "root_cause": primary.get("cause"),
-        "confidence": primary.get("confidence", 0.0),
-        "risk": primary.get("risk", "Medium")
+        "status": "action_proposed",
+        "root_cause": error_type,
+        "action": action,
+        "confidence": round(confidence, 2),
+        "risk": primary["risk"]
     }

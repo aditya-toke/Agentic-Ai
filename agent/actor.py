@@ -1,5 +1,15 @@
+from agent.feedback import feedback_learner
+
 def act(state, approved):
-    if state.decision.get("status") == "blocked":
-        state.action_result = "blocked"
-    else:
-        state.action_result = "approved" if approved else "rejected"
+    decision = state.decision
+
+    error_type = decision["root_cause"]
+    action = decision["action"]
+
+    feedback_learner.record(
+        error_type=error_type,
+        action=action,
+        approved=approved
+    )
+
+    state.action_result = "approved" if approved else "rejected"
