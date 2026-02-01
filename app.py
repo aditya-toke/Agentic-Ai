@@ -23,13 +23,18 @@ st.set_page_config(page_title="Agentic AI Support", layout="wide")
 feedback_learner = FeedbackLearner()
 
 # -------------------------------------------------
-# Helpers (BACKWARD COMPATIBILITY)
+# Helpers — BACKWARD COMPATIBILITY
 # -------------------------------------------------
 def normalize_ticket_df(df):
+    if df.empty:
+        return df
+
     if "status" not in df.columns:
         df["status"] = "OPEN"
+
     if "created_by" not in df.columns:
         df["created_by"] = "unknown"
+
     return df
 
 # -------------------------------------------------
@@ -37,8 +42,10 @@ def normalize_ticket_df(df):
 # -------------------------------------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+
 if "role" not in st.session_state:
     st.session_state.role = None
+
 if "username" not in st.session_state:
     st.session_state.username = None
 
@@ -70,6 +77,7 @@ if not st.session_state.logged_in:
     with center:
         with st.container(border=True):
             st.subheader("Sign in")
+
             username = st.text_input("Username", placeholder="admin or user")
             password = st.text_input("Password", type="password")
 
@@ -82,6 +90,7 @@ if not st.session_state.logged_in:
                     st.rerun()
                 else:
                     st.error("Invalid credentials")
+
     st.stop()
 
 # =================================================
@@ -94,7 +103,7 @@ with col:
         st.rerun()
 
 # =================================================
-# ROLE NAV
+# ROLE-BASED NAVIGATION
 # =================================================
 if st.session_state.role == "user":
     page = st.radio("User Menu", ["📝 Raise Ticket", "📄 My Tickets"], horizontal=True)
@@ -102,7 +111,7 @@ else:
     page = "📊 Agent Dashboard"
 
 # -------------------------------------------------
-# Taxonomy
+# Shared Taxonomy
 # -------------------------------------------------
 ISSUES = [
     "Checkout page blank",
@@ -127,6 +136,7 @@ if page == "📝 Raise Ticket":
     merchant_id = f"M{len(tickets)+1:03d}"
 
     st.text_input("Merchant ID", merchant_id, disabled=True)
+
     issue = st.selectbox("Issue Type", ISSUES)
     error = st.selectbox("Observed Error", ERRORS)
 
@@ -138,6 +148,7 @@ if page == "📝 Raise Ticket":
 
     if st.button("📨 Submit Ticket"):
         final_error = custom_error if error.startswith("Other") else error
+
         if not final_error.strip():
             st.warning("Please describe the error")
         else:
@@ -151,15 +162,18 @@ if page == "📝 Raise Ticket":
                 "status": "OPEN",
                 "created_by": st.session_state.username
             })
-            st.success("Ticket submitted successfully")
+            st.success("Ticket submitted successfully (Status: OPEN)")
 
 # =================================================
-# USER — MY TICKETS
+# USER — MY TICKETS (LOADS FROM DB)
 # =================================================
 if page == "📄 My Tickets":
     st.title("📄 My Tickets")
 
-    df = normalize_ticket_df(pd.DataFrame(get_all_tickets()))
+    tickets = get_all_tickets()
+    df = normalize_ticket_df(pd.DataFrame(tickets))
+
+    # Filter tickets raised by current user
     user_df = df[df["created_by"] == st.session_state.username]
 
     if user_df.empty:
@@ -167,19 +181,26 @@ if page == "📄 My Tickets":
         st.stop()
 
     st.dataframe(
-        user_df[["ticket_id", "issue", "error", "status", "time"]],
+        user_df[
+            ["ticket_id", "merchant_id", "issue", "error", "status", "time"]
+        ],
         use_container_width=True
     )
 
 # =================================================
-# ADMIN — DASHBOARD
+# ADMIN — AGENT DASHBOARD
 # =================================================
 if page == "📊 Agent Dashboard":
     st.title("📊 Agentic AI – Decision Dashboard")
 
-    df = normalize_ticket_df(pd.DataFrame(get_all_tickets()))
+    tickets = get_all_tickets()
+    df = normalize_ticket_df(pd.DataFrame(tickets))
+
     st.metric("🚨 Total Tickets", len(df))
     st.dataframe(df, use_container_width=True)
+
+    if df.empty:
+        st.stop()
 
     agent_state = AgentState()
     observe(agent_state, df.to_dict("records"))
@@ -187,6 +208,7 @@ if page == "📊 Agent Dashboard":
     decide(agent_state)
 
     decision = agent_state.decision
+
     if decision["status"] != "action_proposed":
         st.info("No actionable issue detected")
         st.stop()
@@ -196,19 +218,30 @@ if page == "📊 Agent Dashboard":
 
     for _, row in df.iterrows():
         if row["status"] == "OPEN":
+
             c1, c2 = st.columns(2)
+
             with c1:
                 if st.button(f"✅ Approve {row['ticket_id']}"):
                     update_ticket_status(row["ticket_id"], "APPROVED")
-                    feedback_learner.record_feedback(row["error"], decision["action"], True)
+                    feedback_learner.record_feedback(
+                        row["error"], decision["action"], True
+                    )
                     st.rerun()
+
             with c2:
                 if st.button(f"❌ Reject {row['ticket_id']}"):
                     update_ticket_status(row["ticket_id"], "REJECTED")
-                    feedback_learner.record_feedback(row["error"], decision["action"], False)
+                    feedback_learner.record_feedback(
+                        row["error"], decision["action"], False
+                    )
                     st.rerun()
 
+    # -------------------------------------------------
+    # Agent Learning Memory
+    # -------------------------------------------------
     st.subheader("📚 Agent Learning Memory")
+
     if not feedback_learner.memory:
         st.info("No feedback recorded yet.")
     else:
@@ -218,8 +251,10 @@ if page == "📊 Agent Dashboard":
                     total = stats["success"] + stats["fail"]
                     rate = stats["success"] / total if total else 0
                     st.write(
-                        f"Action: {action} | "
-                        f"Success: {stats['success']} | "
-                        f"Fail: {stats['fail']} | "
-                        f"Rate: {rate:.2f}"
+                        f"""
+                        **Action:** {action}  
+                        Success: {stats['success']}  
+                        Fail: {stats['fail']}  
+                        Success Rate: {rate:.2f}
+                        """
                     )
